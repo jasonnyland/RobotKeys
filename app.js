@@ -12,8 +12,8 @@ var LocalStrategy = require('passport-local').Strategy;
 var dotenv = require('dotenv');
 dotenv.config();
 var AWS = require('aws-sdk');
-AWS.config.update({region: 'REGION'}); // Load credentials and set region from JSON file
-
+//AWS.config.update({region: 'REGION'}); // Load credentials and set region from JSON file
+require('./ec2.js');
 var User = mongoose.model('User');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
