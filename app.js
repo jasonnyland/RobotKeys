@@ -54,6 +54,14 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
         user.subscriptionId = session.subscription;
         user.customerId = session.customer;
         user.save();
+        newEC2(user.subdomain, function (err, data) {
+          user.instance = data;
+          user.save();
+          getIP(data, function (err, data) {
+            user.ip = data;
+            user.save();
+          });
+        });
       }
     })
   }
@@ -160,8 +168,8 @@ app.get('/main', function(req,res,next) {
 
 app.post('/main', function(req,res,next) {
   // take subdomain from form, check if exists in db; get user from session, store subdomain in db
-  console.log(req.body.subdomain);
-  console.log(req.user._id);
+  //console.log(req.body.subdomain);
+  //console.log(req.user._id);
   User.findOne( { subdomain: req.body.subdomain }, function (err, user) {
     if (err) return next(err);
     if (user) return next({message: 'Subdomain is taken.'});
