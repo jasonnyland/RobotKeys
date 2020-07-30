@@ -6,15 +6,10 @@ AWS.config.getCredentials(function(err) {
     if (err) console.log(err.stack);
     // credentials not loaded
     else {
-        console.log("Access key:", AWS.config.credentials.accessKeyId);
+        //console.log("Access key:", AWS.config.credentials.accessKeyId);
     }
 });
-// // Sample call
-// newEC2('zap', function(err,data) {
-//     getIP(data, function(err,data) {
-//         console.log("stack final output: ", data);
-//     });
-// });
+
 
 function newEC2(subnet_name, callback) {
 
@@ -80,7 +75,7 @@ function getIP(instance_id, callback) {
             if (ipAddress) {
                 return callback(null, ipAddress);
             } else {
-                console.log("no ip detected, waiting");
+                //console.log("no ip detected, waiting");
                 setTimeout(() => {
                     getIP(instance_id, callback);
                 }, 1000);
@@ -93,3 +88,5 @@ function getIP(instance_id, callback) {
             return callback(err);
         });
 }
+module.exports.newEC2 = newEC2;
+module.exports.getIP = getIP;

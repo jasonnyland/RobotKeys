@@ -13,7 +13,7 @@ var dotenv = require('dotenv');
 dotenv.config();
 var AWS = require('aws-sdk');
 //AWS.config.update({region: 'REGION'}); // Load credentials and set region from JSON file
-require('./ec2.js');
+var ec2 = require('./ec2.js');
 var User = mongoose.model('User');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -56,10 +56,10 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
         user.subscriptionId = session.subscription;
         user.customerId = session.customer;
         user.save();
-        newEC2(user.subdomain, function (err, data) {
+        ec2.newEC2(user.subdomain, function (err, data) {
           user.instance = data;
           user.save();
-          getIP(data, function (err, data) {
+          ec2.getIP(data, function (err, data) {
             user.ip = data;
             user.save();
           });
