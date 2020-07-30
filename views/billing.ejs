@@ -81,6 +81,9 @@
                 <h1 class="h3 mt-3 mb-4 text-gray-800">Billing Page</h1>
                 <% if (subscriptionActive) { %>
                     <p>Thanks for subscribing!</p>
+                    <p>Your server should be available at https://<%=subdomain%>.robotkeys.com</p>
+                <% } else if (subdomain === undefined ){ %>
+                    Please choose a subdomain before subscribing.
                 <% } else { %>
                     <button onclick="gotoCheckout()" class="btn-lg btn-success">Subscribe for $10 per month</button>
                 <% } %>

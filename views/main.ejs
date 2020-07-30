@@ -82,13 +82,14 @@
           Hi
           <% if (subdomain === undefined) { %>
             <p>Please choose a subdomain: </p>
+            <form action="/main" method="post">
+              <input class="mb-3 form-control" required type="text" name="subdomain" placeholder="Pick your subdomain:"/>
+              <input class="btn btn-primary btn-xl js-scroll-trigger" type="submit" value="Submit"/>
+            </form>
           <% } else { %>
             <p>Your subdomain is: <%= subdomain %></p>
           <% } %>
-          <form action="/main" method="post">
-            <input class="mb-3 form-control" required type="text" name="subdomain" placeholder="Pick your subdomain:"/>
-            <input class="btn btn-primary btn-xl js-scroll-trigger" type="submit" value="Submit"/>
-          </form>
+
         </div>
         <!-- /.container-fluid -->
 

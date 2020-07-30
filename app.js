@@ -151,7 +151,8 @@ app.get('/billing', function(req,res,next) {
     res.render('billing', {
       STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
       sessionId: session.id,
-      subscriptionActive: req.user.subscriptionActive
+      subscriptionActive: req.user.subscriptionActive,
+      subdomain: req.user.subdomain
     })
   });
 });
