@@ -56,6 +56,14 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
         user.subscriptionId = session.subscription;
         user.customerId = session.customer;
         user.save();
+        newEC2(user.subdomain, function (err, data) {
+          user.instance = data;
+          user.save();
+          getIP(data, function (err, data) {
+            user.ip = data;
+            user.save();
+          });
+        });
       }
     })
   }
@@ -154,7 +162,30 @@ app.get('/logout', function(req,res,next) {
 });
 
 app.get('/main', function(req,res,next) {
-  res.render('main');
+  res.render('main', {
+    subscriptionActive: req.user.subscriptionActive,
+    subdomain: req.user.subdomain
+  });
+});
+
+app.post('/main', function(req,res,next) {
+  // take subdomain from form, check if exists in db; get user from session, store subdomain in db
+  //console.log(req.body.subdomain);
+  //console.log(req.user._id);
+  User.findOne( { subdomain: req.body.subdomain }, function (err, user) {
+    if (err) return next(err);
+    if (user) return next({message: 'Subdomain is taken.'});
+    if (!user) {
+      User.findOne({ _id : req.user._id }, function (err, user) {
+        if (err) return next(err);
+        if (user) {
+          user.subdomain = req.body.subdomain;
+          user.save();
+          res.redirect('/main');
+        }
+      });
+    }
+  });
 });
 
 app.get('/login', function(req,res,next) {

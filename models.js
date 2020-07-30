@@ -5,5 +5,8 @@ mongoose.model('User', new mongoose.Schema({
     passwordHash: String,
     subscriptionActive: {type: Boolean, default: false},
     customerId: String,
-    subscriptionId: String
+    subscriptionId: String,
+    subdomain: String,
+    instance: String,
+    ip: String
 }));
