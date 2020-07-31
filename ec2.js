@@ -21,13 +21,12 @@ function newEC2(subnet_name, callback) {
         ImageId: 'ami-0b606d7d59c68a5e0',
         InstanceType: 't3a.nano',
         KeyName: 'rk-client',
+        SecurityGroups: [
+            'rk-client'
+        ],
         MinCount: 1,
         MaxCount: 1,
-        NetworkInterfaces: [{
-            DeviceIndex: 0,
-            SubnetId: 'subnet-a28465f8',
-            AssociatePublicIpAddress: true
-        }],
+
         TagSpecifications: [
             {
                 ResourceType: "instance",

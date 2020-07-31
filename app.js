@@ -15,6 +15,7 @@ var AWS = require('aws-sdk');
 //AWS.config.update({region: 'REGION'}); // Load credentials and set region from JSON file
 var ec2 = require('./ec2.js');
 var User = mongoose.model('User');
+var namecheap = require('./namecheap.js');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -62,6 +63,7 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
           ec2.getIP(data, function (err, data) {
             user.ip = data;
             user.save();
+            namecheap.addHost(user.subdomain, user.ip);
           });
         });
       }
