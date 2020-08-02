@@ -19,8 +19,11 @@
     "http-errors": "~1.6.3",
     "mongoose": "^5.9.6",
     "morgan": "~1.9.1",
+    "node-ssh": "^10.0.2",
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
+    "path": "^0.12.7",
+    "ping": "^0.2.3",
     "stripe": "^8.37.0",
     "xml2json": "^0.12.0"
   }

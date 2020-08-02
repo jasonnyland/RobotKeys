@@ -16,6 +16,7 @@ var AWS = require('aws-sdk');
 var ec2 = require('./ec2.js');
 var User = mongoose.model('User');
 var namecheap = require('./namecheap.js');
+var sshscript = require('./sshscript.js');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -38,7 +39,7 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(request.body, sig, process.env.ENDPOINT_SECRET);
+    event = stripe.webhooks.constructEvent(request.body, sig, process.env.STRIPE_ENDPOINT_SECRET);
   } catch (err) {
     return response.status(400).send(`Webhook Error: ${err.message}`);
   }
@@ -63,7 +64,19 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
           ec2.getIP(data, function (err, data) {
             user.ip = data;
             user.save();
-            namecheap.addHost(user.subdomain, user.ip);
+            namecheap.addHost(user.subdomain, user.ip, function (err, data) {
+              var data = {
+                domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
+                dav_user: process.env.DAV_DEFAULT_USER,
+                dav_pass: process.env.DAV_DEFUALT_PASS
+              }
+              sshscript.dnsWatchdog(data.domain, function(){
+                console.log("Watchdog ended, triggering sshPayload")
+                sshPayload(data, function(){
+                  console.log("sshPayload has ended and triggered its callback")
+                });
+              });
+            });
           });
         });
       }
@@ -201,19 +214,23 @@ app.post('/login',
       res.redirect('/main');
     });
 
-app.get('/walkthrough', function (req,res,next) {
-  req.session.sawWalkthrough = true;
-  res.end();
+app.get('/guide', function (req,res,next) {
+  res.render('guide')
 });
 
-app.get('/complicated', function (req,res,next) {
-  console.log(req.session.sawWalkthrough);
-});
+// app.get('/guide', function (req,res,next) {
+//   req.session.sawWalkthrough = true;
+//   res.end();
+// });
+//
+// app.get('/complicated', function (req,res,next) {
+//   console.log(req.session.sawWalkthrough);
+// });
 
 app.post('/signup',
     passport.authenticate('signup-local', { failureRedirect: '/' }),
     function(req, res) {
-      res.redirect('/main');
+      res.redirect('/billing');
     });
 
 // catch 404 and forward to error handler
