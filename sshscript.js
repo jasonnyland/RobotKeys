@@ -11,13 +11,13 @@ const server_user = 'ubuntu'
 //     dav_user: 'user',
 //     dav_pass: 'pass'
 // }
-
-dnsWatchdog(data.domain, function(){
-    console.log("Watchdog ended, triggering sshPayload")
-    sshPayload(data, function(){
-        console.log("sshPayload has ended and triggered its callback")
-    });
-});
+// // Sample call
+// dnsWatchdog(data.domain, function(){
+//     console.log("Watchdog ended, triggering sshPayload")
+//     sshPayload(data, function(){
+//         console.log("sshPayload has ended and triggered its callback")
+//     });
+// });
 
 function sshPayload(data, next) {
     ssh.connect({
