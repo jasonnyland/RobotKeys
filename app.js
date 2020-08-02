@@ -58,26 +58,26 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
         user.subscriptionId = session.subscription;
         user.customerId = session.customer;
         user.save();
-        ec2.newEC2(user.subdomain, function (err, data) {
+        ec2.newEC2( function (err, data) {
           user.instance = data;
           user.save();
-          ec2.getIP(data, function (err, data) {
-            user.ip = data;
-            user.save();
-            namecheap.addHost(user.subdomain, user.ip, function (err, data) {
-              var data = {
-                domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
-                dav_user: process.env.DAV_DEFAULT_USER,
-                dav_pass: process.env.DAV_DEFUALT_PASS
-              }
-              sshscript.dnsWatchdog(data.domain, function(){
-                console.log("Watchdog ended, triggering sshPayload")
-                sshPayload(data, function(){
-                  console.log("sshPayload has ended and triggered its callback")
-                });
-              });
-            });
-          });
+          // ec2.getIP(data, function (err, data) {
+          //   user.ip = data;
+          //   user.save();
+          //   namecheap.addHost(user.subdomain, user.ip, function (err, data) {
+          //     var data = {
+          //       domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
+          //       dav_user: process.env.DAV_DEFAULT_USER,
+          //       dav_pass: process.env.DAV_DEFUALT_PASS
+          //     }
+          //     sshscript.dnsWatchdog(data.domain, function(){
+          //       console.log("Watchdog ended, triggering sshPayload")
+          //       sshPayload(data, function(){
+          //         console.log("sshPayload has ended and triggered its callback")
+          //       });
+          //     });
+          //   });
+          // });
         });
       }
     })
@@ -151,6 +151,9 @@ app.get('/', function(req,res,next) {
 });
 
 app.get('/billing', function(req,res,next) {
+  if (req.user.subscriptionActive) {
+    res.redirect('/main');
+  }
   stripe.checkout.sessions.create({
     customer_email: req.user.email,
     payment_method_types: ['card'],
