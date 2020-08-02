@@ -1,0 +1,28 @@
+version: '3'
+services:
+  letsencrypt:
+    image: linuxserver/letsencrypt
+    container_name: letsencrypt
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /home/ubuntu/docker/letsencrypt/config:/config
+    restart:
+      always
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - EMAIL=admin@robotkeys.com
+      - URL=asdf.robotkeys.com
+      - TZ=America/Los_Angeles
+  webdav:
+    image: wheatstalk/docker-php-webdav
+    container_name: webdav
+    volumes:
+      - /home/ubuntu/docker/webdav/public:/var/webdav/public
+    restart:
+      always
+    environment:
+      - WEBDAV_USERNAME=Lrsp8fEfIuGFxWR2s4vj
+      - WEBDAV_PASSWORD=l58vPPTyeUWe1sxTe3ZN
