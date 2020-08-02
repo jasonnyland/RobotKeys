@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>RobotKeys Billing</title>
+    <title>RobotKeys Guide</title>
 
     <!-- Custom fonts for this template-->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -39,7 +39,6 @@
         <!-- Divider -->
         <hr class="sidebar-divider my-0">
 
-        <!-- Nav Item - Dashboard -->
         <li class="nav-item">
             <a class="nav-link" href="/billing">
                 <i class="fas fa-fw fa-money-bill-wave-alt"></i>
@@ -85,31 +84,9 @@
             <div class="container-fluid">
 
                 <!-- Page Heading -->
-                <h1 class="h3 mt-3 mb-4 text-gray-800">Billing Page</h1>
-                <% if (subscriptionActive) { %>
-                    <p>Thanks for subscribing!</p>
-                    <p>Your server should be available at <a href="https://<%=subdomain%>.robotkeys.com">https://<%=subdomain%>.robotkeys.com</a></p>
-                <% } else if (subdomain === undefined ){ %>
-                    Please choose a subdomain before subscribing.
-                <% } else { %>
-                    <button onclick="gotoCheckout()" class="btn-lg btn-success">Subscribe for $10 per month</button>
-                <% } %>
-                <script src="https://js.stripe.com/v3/"></script>
-                <script>
-                    var stripe = Stripe('<%= STRIPE_PUBLIC_KEY %>');
-                    function gotoCheckout() {
-                        stripe.redirectToCheckout({
-                            // Make the id field from the Checkout Session creation API response
-                            // available to this file, so you can provide it as parameter here
-                            // instead of the {{CHECKOUT_SESSION_ID}} placeholder.
-                            sessionId: '<%= sessionId %>'
-                        }).then(function (result) {
-                            // If `redirectToCheckout` fails due to a browser or network
-                            // error, display the localized error message to your customer
-                            // using `result.error.message`.
-                        });
-                    }
-                </script>
+                <h1 class="h3 mt-3 mb-4 text-gray-800">Main Page</h1>
+                Hi
+
 
             </div>
             <!-- /.container-fluid -->

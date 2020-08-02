@@ -77,12 +77,14 @@ function addHost (hostname, address, next) {
        
         axios.post('https://api.namecheap.com/xml.response', null, { params: parameters })
         .then(function (response) {
-            // var parsed = parser.toJson(response.data);
-            // parsed = JSON.parse(parsed);
+            var parsed = parser.toJson(response.data);
+            parsed = JSON.parse(parsed);
             // console.log(parsed);
+            return next(null, parsed);
         })
         .catch(function (error) {
             console.log(error)
+            return next(err);
         });
     });
 }
