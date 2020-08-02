@@ -81,7 +81,7 @@
                 <h1 class="h3 mt-3 mb-4 text-gray-800">Billing Page</h1>
                 <% if (subscriptionActive) { %>
                     <p>Thanks for subscribing!</p>
-                    <p>Your server should be available at https://<%=subdomain%>.robotkeys.com</p>
+                    <p>Your server should be available at <a href="https://<%=subdomain%>.robotkeys.com">https://<%=subdomain%>.robotkeys.com</a></p>
                 <% } else if (subdomain === undefined ){ %>
                     Please choose a subdomain before subscribing.
                 <% } else { %>
