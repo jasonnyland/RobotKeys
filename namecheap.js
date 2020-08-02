@@ -10,10 +10,10 @@ function getHosts (next) {
             ApiUser: process.env.NAMECHEAP_API_USER,
             ApiKey: process.env.NAMECHEAP_API_KEY,
             UserName: process.env.NAMECHEAP_API_USER,
-            ClientIp: process.env.NAMECHEAP_CLIENT_IP,
+            ClientIp: process.env.APP_IP,
             Command: 'namecheap.domains.dns.getHosts',
-            SLD: process.env.NAMECHEAP_URL_SLD,
-            TLD: process.env.NAMECHEAP_URL_TLD
+            SLD: process.env.APP_URL_SLD,
+            TLD: process.env.APP_URL_TLD
         }
     })
         .then(function (response) {
@@ -45,7 +45,7 @@ function getHosts (next) {
 }
 
 // addHost takes data from getHosts, adds a new host, builds a request, and sends it
-function addHost (hostname, address) {
+function addHost (hostname, address, next) {
     getHosts(function (err, data) {
         var addon = {
             HostName: hostname,

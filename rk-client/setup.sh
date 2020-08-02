@@ -57,4 +57,4 @@ mv -f ./default /home/ubuntu/docker/letsencrypt/config/nginx/site-confs/
 systemctl restart docker
 docker container restart letsencrypt
 
-exit 0
+shutdown --reboot now
