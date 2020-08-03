@@ -11,7 +11,7 @@ AWS.config.getCredentials(function(err) {
 });
 
 
-function newEC2(subnet_name, callback) {
+function newEC2(callback) {
 
     // Create EC2 service object
     var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
@@ -33,7 +33,7 @@ function newEC2(subnet_name, callback) {
                 Tags: [
                     {
                         Key: "Name",
-                        Value: subnet_name
+                        Value: "rk_client"
                     }
                 ]
             }
@@ -87,5 +87,8 @@ function getIP(instance_id, callback) {
             return callback(err);
         });
 }
+
+// add a function to tag instances
+
 module.exports.newEC2 = newEC2;
 module.exports.getIP = getIP;

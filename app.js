@@ -58,26 +58,28 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
         user.subscriptionId = session.subscription;
         user.customerId = session.customer;
         user.save();
-        ec2.newEC2(user.subdomain, function (err, data) {
+        ec2.newEC2( function (err, data) {
           user.instance = data;
           user.save();
-          ec2.getIP(data, function (err, data) {
-            user.ip = data;
-            user.save();
-            namecheap.addHost(user.subdomain, user.ip, function (err, data) {
-              var data = {
-                domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
-                dav_user: process.env.DAV_DEFAULT_USER,
-                dav_pass: process.env.DAV_DEFUALT_PASS
-              }
-              sshscript.dnsWatchdog(data.domain, function(){
-                console.log("Watchdog ended, triggering sshPayload")
-                sshPayload(data, function(){
-                  console.log("sshPayload has ended and triggered its callback")
-                });
-              });
-            });
-          });
+
+          // ec2.getIP(data, function (err, data) {
+          //   user.ip = data;
+          //   user.save();
+          //   namecheap.addHost(user.subdomain, user.ip, function (err, data) {
+          //     var data = {
+          //       domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
+          //       dav_user: process.env.DAV_DEFAULT_USER,
+          //       dav_pass: process.env.DAV_DEFUALT_PASS
+          //     }
+          //     sshscript.dnsWatchdog(data.domain, function(){
+          //       console.log("Watchdog ended, triggering sshPayload")
+          //       sshPayload(data, function(){
+          //         console.log("sshPayload has ended and triggered its callback")
+          //       });
+          //     });
+          //   });
+          // });
+
         });
       }
     })
@@ -151,25 +153,29 @@ app.get('/', function(req,res,next) {
 });
 
 app.get('/billing', function(req,res,next) {
-  stripe.checkout.sessions.create({
-    customer_email: req.user.email,
-    payment_method_types: ['card'],
-    subscription_data: {
-      items: [{
-        plan: process.env.STRIPE_PLAN,
-      }],
-    },
-    success_url: 'http://localhost:3000/billing?session_id={CHECKOUT_SESSION_ID}',
-    cancel_url: 'http://localhost:3000/billing',
-  }, function (err, session) {
-    if (err) return next(err);
-    res.render('billing', {
-      STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
-      sessionId: session.id,
-      subscriptionActive: req.user.subscriptionActive,
-      subdomain: req.user.subdomain
-    })
-  });
+  if (req.user.subscriptionActive) {
+    res.redirect('/main');
+  } else {
+    stripe.checkout.sessions.create({
+      customer_email: req.user.email,
+      payment_method_types: ['card'],
+      subscription_data: {
+        items: [{
+          plan: process.env.STRIPE_PLAN,
+        }],
+      },
+      success_url: 'http://localhost:3000/billing?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: 'http://localhost:3000/billing',
+    }, function (err, session) {
+      if (err) return next(err);
+      res.render('billing', {
+        STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
+        sessionId: session.id,
+        subscriptionActive: req.user.subscriptionActive,
+        subdomain: req.user.subdomain
+      })
+    });
+  }
 });
 
 app.get('/logout', function(req,res,next) {
@@ -178,30 +184,57 @@ app.get('/logout', function(req,res,next) {
 });
 
 app.get('/main', function(req,res,next) {
-  res.render('main', {
+  if (!req.user.subscriptionActive) {
+    res.redirect('/billing');
+  } else {
+    res.render('main', {
     subscriptionActive: req.user.subscriptionActive,
-    subdomain: req.user.subdomain
+    subdomain: req.user.subdomain,
+    SLD: process.env.APP_URL_SLD,
+    TLD: process.env.APP_URL_TLD
   });
+  }
+
 });
 
 app.post('/main', function(req,res,next) {
-  // take subdomain from form, check if exists in db; get user from session, store subdomain in db
-  //console.log(req.body.subdomain);
-  //console.log(req.user._id);
-  User.findOne( { subdomain: req.body.subdomain }, function (err, user) {
-    if (err) return next(err);
-    if (user) return next({message: 'Subdomain is taken.'});
-    if (!user) {
-      User.findOne({ _id : req.user._id }, function (err, user) {
-        if (err) return next(err);
-        if (user) {
-          user.subdomain = req.body.subdomain;
-          user.save();
-          res.redirect('/main');
-        }
-      });
-    }
-  });
+  // if user has an instance, get the IP, update nameservers, and launch scripts when nameservers update
+  if (req.user.instance) {
+    User.findOne( { subdomain: req.body.subdomain }, function (err, user) {
+      if (err) return next(err);
+      if (user) return next({message: 'Subdomain is taken.'});
+      if (!user) {
+        User.findOne({ _id : req.user._id }, function (err, user) {
+          if (err) return next(err);
+          if (user) {
+            user.subdomain = req.body.subdomain;
+            user.save();
+            /////////////////////////////////////////////
+            ec2.getIP(req.user.instance, function (err, data) {
+              user.ip = data;
+              user.save();
+              namecheap.addHost(user.subdomain, user.ip, function (err, data) {
+                var data = {
+                  domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
+                  dav_user: process.env.DAV_DEFAULT_USER,
+                  dav_pass: process.env.DAV_DEFUALT_PASS
+                }
+                sshscript.dnsWatchdog(data.domain, function(){
+                  console.log("Watchdog ended, triggering sshPayload")
+                  sshPayload(data, function(){
+                    console.log("sshPayload has ended and triggered its callback")
+                  });
+                });
+              });
+            });
+            /////////////////////////////////////////////
+            res.redirect('/main');
+          }
+        });
+      }
+    });
+  }
+
 });
 
 app.get('/login', function(req,res,next) {
