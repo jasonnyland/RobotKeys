@@ -61,6 +61,7 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
         ec2.newEC2( function (err, data) {
           user.instance = data;
           user.save();
+
           // ec2.getIP(data, function (err, data) {
           //   user.ip = data;
           //   user.save();
@@ -78,6 +79,7 @@ app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, respo
           //     });
           //   });
           // });
+
         });
       }
     })
