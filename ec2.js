@@ -46,9 +46,9 @@ function newEC2(callback) {
     // Handle promise's fulfilled/rejected states
     instancePromise.then(
         function(data) {
-            console.log(data);
+            //console.log(data);
             var instanceId = data.Instances[0].InstanceId;
-            console.log("Created instance", instanceId);
+            //console.log("Created instance", instanceId);
             return callback(null, instanceId);
         }).catch(
         function(err) {
@@ -88,7 +88,28 @@ function getIP(instance_id, callback) {
         });
 }
 
-// add a function to tag instances
+function tagInstance(instanceId, key, value, callback) {
+    // Create EC2 service object
+    //var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
+    tagParams = {Resources: [instanceId], Tags: [
+            {
+                Key: key,
+                Value: value
+            }
+        ]};
+    // Create a promise on an EC2 service object
+    var tagPromise = new AWS.EC2({apiVersion: '2016-11-15'}).createTags(tagParams).promise();
+    // Handle promise's fulfilled/rejected states
+    tagPromise.then(
+        function(data) {
+            return callback(null,0)
+        }).catch(
+        function(err) {
+            console.error(err, err.stack);
+            return callback(err);
+        });
+}
 
 module.exports.newEC2 = newEC2;
 module.exports.getIP = getIP;
+module.exports.tagInstance = tagInstance;

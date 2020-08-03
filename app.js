@@ -20,7 +20,7 @@ var sshscript = require('./sshscript.js');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-mongoose.connect('mongodb://localhost:27017/robotkeys-data',{ useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect('mongodb://localhost:27017/robotkeys-data', {useNewUrlParser: true, useUnifiedTopology: true});
 
 var app = express();
 
@@ -34,221 +34,208 @@ const bodyParser = require('body-parser');
 
 // Match the raw body to content type application/json
 app.post('/webhook', bodyParser.raw({type: 'application/json'}), (request, response) => {
-  const sig = request.headers['stripe-signature'];
+    const sig = request.headers['stripe-signature'];
 
-  let event;
+    let event;
 
-  try {
-    event = stripe.webhooks.constructEvent(request.body, sig, process.env.STRIPE_ENDPOINT_SECRET);
-  } catch (err) {
-    return response.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    try {
+        event = stripe.webhooks.constructEvent(request.body, sig, process.env.STRIPE_ENDPOINT_SECRET);
+    } catch (err) {
+        return response.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
-  // Handle the checkout.session.completed event
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
 
-    // Fulfill the purchase...
-    console.log(session);
-    User.findOne({
-      email: session.customer_email
-    }, function (err,user) {
-      if (user) {
-        user.subscriptionActive = true;
-        user.subscriptionId = session.subscription;
-        user.customerId = session.customer;
-        user.save();
-        ec2.newEC2( function (err, data) {
-          user.instance = data;
-          user.save();
+        // Fulfill the purchase...
+        console.log("[Checkout Completed]");
+        User.findOne({
+            email: session.customer_email
+        }, function (err, user) {
+            if (user) {
+                user.subscriptionActive = true;
+                user.subscriptionId = session.subscription;
+                user.customerId = session.customer;
+                user.save();
+                ec2.newEC2(function (err, data) {
+                    console.log("[AWS API] New instance created:", data);
+                    user.instance = data;
+                    user.save();
 
-          // ec2.getIP(data, function (err, data) {
-          //   user.ip = data;
-          //   user.save();
-          //   namecheap.addHost(user.subdomain, user.ip, function (err, data) {
-          //     var data = {
-          //       domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
-          //       dav_user: process.env.DAV_DEFAULT_USER,
-          //       dav_pass: process.env.DAV_DEFUALT_PASS
-          //     }
-          //     sshscript.dnsWatchdog(data.domain, function(){
-          //       console.log("Watchdog ended, triggering sshPayload")
-          //       sshPayload(data, function(){
-          //         console.log("sshPayload has ended and triggered its callback")
-          //       });
-          //     });
-          //   });
-          // });
+                });
+            }
+        })
+    }
 
-        });
-      }
-    })
-  }
-
-  // Return a response to acknowledge receipt of the event
-  response.json({received: true});
+    // Return a response to acknowledge receipt of the event
+    response.json({received: true});
 });
 // ----------------- End Stripe Sample Code ------------------
 
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressSession({
-  secret: process.env.EXPRESS_SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false
+    secret: process.env.EXPRESS_SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false
 }));
 app.use(passport.initialize());
 app.use(passport.session());
 
 passport.use(new LocalStrategy({
-  usernameField: 'email',
-  passwordField: 'password',
-}, function (email,password,next) {
-  User.findOne({
-    email: email
-  }, function(err,user) {
-    if (err) return next(err);
-    if(!user || !bcrypt.compareSync(password, user.passwordHash)) {
-      return next({message: 'Email or password incorrect'});
-    }
-    next(null,user);
-  })
+    usernameField: 'email',
+    passwordField: 'password',
+}, function (email, password, next) {
+    User.findOne({
+        email: email
+    }, function (err, user) {
+        if (err) return next(err);
+        if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+            return next({message: 'Email or password incorrect'});
+        }
+        next(null, user);
+    })
 }));
 
 passport.use('signup-local', new LocalStrategy({
-  usernameField: 'email',
-  passwordField: 'password',
-}, function (email,password,next) {
-  User.findOne({
-    email: email
-  }, function(err,user) {
-    if (err) return next(err);
-    if (user) return next({message: "User already exists"});
-    let newUser = new User({
-      email: email,
-      passwordHash: bcrypt.hashSync(password, 10)
-    });
-    newUser.save(function(err) {
-      next(err, newUser);
-    });
+    usernameField: 'email',
+    passwordField: 'password',
+    passwordField: 'password',
+}, function (email, password, next) {
+    User.findOne({
+        email: email
+    }, function (err, user) {
+        if (err) return next(err);
+        if (user) return next({message: "User already exists"});
+        let newUser = new User({
+            email: email,
+            passwordHash: bcrypt.hashSync(password, 10)
+        });
+        newUser.save(function (err) {
+            next(err, newUser);
+        });
 
-  });
+    });
 }));
 
-passport.serializeUser(function (user,next) {
-  next(null,user._id);
+passport.serializeUser(function (user, next) {
+    next(null, user._id);
 });
 
-passport.deserializeUser(function (id,next) {
-  User.findById(id, function (err, user) {
-    next(err,user);
-  })
+passport.deserializeUser(function (id, next) {
+    User.findById(id, function (err, user) {
+        next(err, user);
+    })
 });
 
-app.get('/', function(req,res,next) {
-  res.render('index', {title: "RobotKeys"});
+app.get('/', function (req, res, next) {
+    res.render('index', {title: "RobotKeys"});
 });
 
-app.get('/billing', function(req,res,next) {
-  if (req.user.subscriptionActive) {
-    res.redirect('/main');
-  } else {
-    stripe.checkout.sessions.create({
-      customer_email: req.user.email,
-      payment_method_types: ['card'],
-      subscription_data: {
-        items: [{
-          plan: process.env.STRIPE_PLAN,
-        }],
-      },
-      success_url: 'http://localhost:3000/billing?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'http://localhost:3000/billing',
-    }, function (err, session) {
-      if (err) return next(err);
-      res.render('billing', {
-        STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
-        sessionId: session.id,
-        subscriptionActive: req.user.subscriptionActive,
-        subdomain: req.user.subdomain
-      })
-    });
-  }
-});
-
-app.get('/logout', function(req,res,next) {
-  req.logout();
-  res.redirect('/');
-});
-
-app.get('/main', function(req,res,next) {
-  if (!req.user.subscriptionActive) {
-    res.redirect('/billing');
-  } else {
-    res.render('main', {
-    subscriptionActive: req.user.subscriptionActive,
-    subdomain: req.user.subdomain,
-    SLD: process.env.APP_URL_SLD,
-    TLD: process.env.APP_URL_TLD
-  });
-  }
-
-});
-
-app.post('/main', function(req,res,next) {
-  // if user has an instance, get the IP, update nameservers, and launch scripts when nameservers update
-  if (req.user.instance) {
-    User.findOne( { subdomain: req.body.subdomain }, function (err, user) {
-      if (err) return next(err);
-      if (user) return next({message: 'Subdomain is taken.'});
-      if (!user) {
-        User.findOne({ _id : req.user._id }, function (err, user) {
-          if (err) return next(err);
-          if (user) {
-            user.subdomain = req.body.subdomain;
-            user.save();
-            /////////////////////////////////////////////
-            ec2.getIP(req.user.instance, function (err, data) {
-              user.ip = data;
-              user.save();
-              namecheap.addHost(user.subdomain, user.ip, function (err, data) {
-                var data = {
-                  domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
-                  dav_user: process.env.DAV_DEFAULT_USER,
-                  dav_pass: process.env.DAV_DEFUALT_PASS
-                }
-                sshscript.dnsWatchdog(data.domain, function(){
-                  console.log("Watchdog ended, triggering sshPayload")
-                  sshPayload(data, function(){
-                    console.log("sshPayload has ended and triggered its callback")
-                  });
-                });
-              });
-            });
-            /////////////////////////////////////////////
-            res.redirect('/main');
-          }
+app.get('/billing', function (req, res, next) {
+    if (req.user.subscriptionActive) {
+        res.redirect('/main');
+    } else {
+        stripe.checkout.sessions.create({
+            customer_email: req.user.email,
+            payment_method_types: ['card'],
+            subscription_data: {
+                items: [{
+                    plan: process.env.STRIPE_PLAN,
+                }],
+            },
+            success_url: 'http://localhost:3000/billing?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'http://localhost:3000/billing',
+        }, function (err, session) {
+            if (err) return next(err);
+            res.render('billing', {
+                STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
+                sessionId: session.id,
+                subscriptionActive: req.user.subscriptionActive,
+                subdomain: req.user.subdomain
+            })
         });
-      }
-    });
-  }
+    }
+});
+
+app.get('/logout', function (req, res, next) {
+    req.logout();
+    res.redirect('/');
+});
+
+app.get('/main', function (req, res, next) {
+    if (!req.user.subscriptionActive) {
+        res.redirect('/billing');
+    } else {
+        res.render('main', {
+            subscriptionActive: req.user.subscriptionActive,
+            subdomain: req.user.subdomain,
+            SLD: process.env.APP_URL_SLD,
+            TLD: process.env.APP_URL_TLD
+        });
+    }
 
 });
 
-app.get('/login', function(req,res,next) {
-  res.render('login');
+app.post('/main', function (req, res, next) {
+    // if user has an instance, get the IP, update nameservers, and launch scripts when nameservers update
+    if (req.user.instance) {
+        User.findOne({subdomain: req.body.subdomain}, function (err, user) {
+            if (err) return next(err);
+            if (user) return next({message: 'Subdomain is taken.'});
+            if (!user) {
+                User.findOne({_id: req.user._id}, function (err, user) {
+                    if (err) return next(err);
+                    if (user) {
+                        user.subdomain = req.body.subdomain;
+                        user.save();
+                        /////////////////////////////////////////////
+                        ec2.getIP(req.user.instance, function (err, data) {
+                            user.ip = data;
+                            user.save();
+                            namecheap.addHost(user.subdomain, user.ip, function (err, data) {
+                                var entry = {
+                                    domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
+                                    dav_user: req.body.name,
+                                    dav_pass: req.body.pw
+                                }
+                                sshscript.dnsWatchdog(entry.domain, 0, function () {
+                                    console.log("Watchdog ended, triggering sshPayload")
+                                    sshscript.sshPayload(entry, function () {
+                                        console.log("sshPayload has ended and triggered its callback")
+                                    });
+                                });
+                            });
+                        });
+                        /////////////////////////////////////////////
+                        ec2.tagInstance(user.instance,'Name',user.subdomain, function () {
+                            //console.log("Instance Tagged")
+                        })
+                        res.redirect('/main');
+                    }
+                });
+            }
+        });
+    }
+
+});
+
+app.get('/login', function (req, res, next) {
+    res.render('login');
 });
 
 app.post('/login',
-    passport.authenticate('local', { failureRedirect: '/login' }),
-    function(req, res) {
-      res.redirect('/main');
+    passport.authenticate('local', {failureRedirect: '/login'}),
+    function (req, res) {
+        res.redirect('/main');
     });
 
-app.get('/guide', function (req,res,next) {
-  res.render('guide')
+app.get('/guide', function (req, res, next) {
+    res.render('guide')
 });
 
 // app.get('/guide', function (req,res,next) {
@@ -261,25 +248,25 @@ app.get('/guide', function (req,res,next) {
 // });
 
 app.post('/signup',
-    passport.authenticate('signup-local', { failureRedirect: '/' }),
-    function(req, res) {
-      res.redirect('/billing');
+    passport.authenticate('signup-local', {failureRedirect: '/'}),
+    function (req, res) {
+        res.redirect('/billing');
     });
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+app.use(function (req, res, next) {
+    next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use(function (err, req, res, next) {
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+    // render the error page
+    res.status(err.status || 500);
+    res.render('error');
 });
 
 module.exports = app;

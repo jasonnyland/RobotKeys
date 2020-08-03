@@ -24,20 +24,20 @@ function sshPayload(data, next) {
         host: data.domain,
         username: server_user,
         //update private keys location
-        privateKey: path.normalize('./rk-client.pem')
+        privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
     }).then(function(){
         ssh.putDirectory(path.normalize('./rk-client'), 'rk-client', {
             recursive: true,
             concurrency: 10
         })
         .then(function(){
-            console.log("[SSH_PAYLOAD] Copied rk-client directory");
+            console.log("[SSH] Copied install files");
             ssh.exec('sudo', ['chmod', '+x', loc])
             .then(function(result){
-                console.log("[SSH_PAYLOAD] chmod-ed the setup script");
+                console.log("[SSH] chmod setup script");
                 ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass])
                 .then(function(result){
-                    console.log("[SSH_PAYLOAD] Bash script ended");
+                    console.log("[SSH_PAYLOAD] Bash script ended OMFGGGGGGGGGGGGG!!!!!!!!!!!!");
                     ssh.end();
                     next();
                 }).catch(function(error){
@@ -56,16 +56,15 @@ function sshPayload(data, next) {
 
 
 
-function dnsWatchdog(domain, next) {
-    var host = domain;
-    ping.sys.probe(host, function(isAlive) {
+function dnsWatchdog(domain, mins, next) {
+    ping.sys.probe(domain, function(isAlive) {
         if (isAlive) {
-            console.log('[DNS_WATCHDOG]',domain,'is up.  Resuming next function.')
+            console.log('[DNS_WATCHDOG]',domain,'is up.')
             next();
         } else {
-            console.log('[DNS_WATCHDOG]',domain,'is down.  Checking again in 60 seconds.')
+            console.log('[DNS_WATCHDOG]',domain,'is down',mins,'minutes')
             setTimeout(() => {
-                dnsWatchdog(domain, next);
+                dnsWatchdog(domain, (mins + 1), next);
             }, 60000);
         }
     });

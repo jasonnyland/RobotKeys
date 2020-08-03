@@ -98,13 +98,16 @@
             </form>
             <br>
             <p>These settings will be used to connect KeePass to your new server:</p>
-            <img src="images/screenshot1.png">
+            <span class="border border-primary">
+              <img src="images/screenshot1.png" class="rounded">
+            </span>
+
 
           <% } else { %>
             <h1 class="h3 mt-3 mb-4 text-gray-800">Initial Setup Completed</h1>
             <p>Your username and password have been set.</p>
-            <p>Your custom url is: https://<%= subdomain %>.<%= SLD %>.<%= TLD %></p>
-            <p>Please allow approximately 10 minutes for software to be configured and name servers to update</p>
+            <p>Your custom url is: <a href="https://<%= subdomain %>.<%= SLD %>.<%= TLD %>">https://<%= subdomain %>.<%= SLD %>.<%= TLD %></a></p>
+            <p>Please wait about 10 minutes for software to be configured and name servers to update</p>
             <p>Password change functionality not yet implemented</p>
             <p>Please view the guide tab for instructions on how to set up KeePass.</p>
           <% } %>
