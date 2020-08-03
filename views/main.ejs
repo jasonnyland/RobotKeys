@@ -47,13 +47,6 @@
 
       <!-- Nav Item - Dashboard -->
       <li class="nav-item">
-        <a class="nav-link" href="/billing">
-          <i class="fas fa-fw fa-money-bill-wave-alt"></i>
-          <span>Billing</span></a>
-      </li>
-
-      <!-- Nav Item - Dashboard -->
-      <li class="nav-item">
         <a class="nav-link" href="/main">
           <i class="fas fa-fw fa-tachometer-alt"></i>
           <span>Main</span></a>
@@ -91,16 +84,29 @@
         <div class="container-fluid">
 
           <!-- Page Heading -->
-          <h1 class="h3 mt-3 mb-4 text-gray-800">Main Page</h1>
-          Hi
+
           <% if (subdomain === undefined) { %>
-            <p>Please choose a subdomain: </p>
-            <form action="/main" method="post">
-              <input class="mb-3 form-control" required type="text" name="subdomain" placeholder="Pick your subdomain:"/>
+            <h1 class="h3 mt-3 mb-4 text-gray-800">Initial Setup</h1>
+            <p>Please choose a subdomain, user, and password for the server: </p>
+            <form action="/main" autocomplete="off" method="post">
+              <input type="text" style="display:none">
+              <input type="password" style="display:none">
+              <input class="mb-1 form-control" required type="text" name="subdomain" placeholder="Pick a subdomain for your server"/>
+              <input class="mb-1 form-control" required type="text" autocomplete="off" name="name" placeholder="Pick a username for your server"/>
+              <input class="mb-1 form-control" required type="password" autocomplete="off" name="pw" placeholder="Pick a password for your server"/>
               <input class="btn btn-primary btn-xl js-scroll-trigger" type="submit" value="Submit"/>
             </form>
+            <br>
+            <p>These settings will be used to connect KeePass to your new server:</p>
+            <img src="images/screenshot1.png">
+
           <% } else { %>
-            <p>Your subdomain is: <%= subdomain %></p>
+            <h1 class="h3 mt-3 mb-4 text-gray-800">Initial Setup Completed</h1>
+            <p>Your username and password have been set.</p>
+            <p>Your custom url is: https://<%= subdomain %>.<%= SLD %>.<%= TLD %></p>
+            <p>Please allow approximately 10 minutes for software to be configured and name servers to update</p>
+            <p>Password change functionality not yet implemented</p>
+            <p>Please view the guide tab for instructions on how to set up KeePass.</p>
           <% } %>
 
         </div>
