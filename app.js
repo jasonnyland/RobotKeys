@@ -19,8 +19,8 @@ var namecheap = require('./namecheap.js');
 var sshscript = require('./sshscript.js');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
-mongoose.connect('mongodb://localhost:27017/robotkeys-data', {useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect('mongodb://'+process.env.MONGO_USERNAME+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_LOCATION,{useNewUrlParser: true, useUnifiedTopology: true})
+//mongoose.connect(process.env.MONGO_LOCATION, {useNewUrlParser: true, useUnifiedTopology: true});
 
 var app = express();
 
@@ -148,8 +148,8 @@ app.get('/billing', function (req, res, next) {
                     plan: process.env.STRIPE_PLAN,
                 }],
             },
-            success_url: 'http://localhost:3000/billing?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url: 'http://localhost:3000/billing',
+            success_url: process.env.STRIPE_WEBHOOK_SUCCESS_URL,
+            cancel_url: process.env.STRIPE_WEBHOOK_CANCEL_URL,
         }, function (err, session) {
             if (err) return next(err);
             res.render('billing', {

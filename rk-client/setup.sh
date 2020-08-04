@@ -14,7 +14,7 @@ password=$3
 apt-get update
 apt-get upgrade -y
 apt-get install apt-transport-https ca-certificates curl software-properties-common  -y
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - 2> /dev/null
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - # 2> /dev/null
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
 apt-get update
 ### apt-cache policy docker-ce
