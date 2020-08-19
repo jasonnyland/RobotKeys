@@ -1,7 +1,7 @@
-var path = require('path')
-var NodeSSH = require('node-ssh')
-var ping = require('ping')
-var ssh = new NodeSSH()
+const path = require('path')
+const NodeSSH = require('node-ssh')
+const ping = require('ping')
+const ssh = new NodeSSH()
 const loc = '/home/ubuntu/rk-client/setup.sh'
 const server_user = 'ubuntu'
 
@@ -23,44 +23,41 @@ function sshPayload(data, next) {
     ssh.connect({
         host: data.domain,
         username: server_user,
-        //update private keys location
         privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
-    }).then(function(){
+    }).then(() => {
         ssh.putDirectory(path.normalize('./rk-client'), 'rk-client', {
             recursive: true,
             concurrency: 10
         })
-        .then(function(){
+        .then(() => {
             console.log("[SSH] Copied install files");
             ssh.exec('sudo', ['chmod', '+x', loc])
-            .then(function(result){
+            .then(() => {
                 console.log("[SSH] chmod setup script");
                 ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass])
-                .then(function(result){
+                .then(() => {
                     console.log("[SSH_PAYLOAD] Bash script ended OMFGGGGGGGGGGGGG!!!!!!!!!!!!");
                     ssh.end();
                     next();
-                }).catch(function(error){
-                    console.log(error);
+                }).catch((err) => {
+                    console.log(err);
                 });
-            }).catch(function(error){
-                console.log(error);
+            }).catch((err) => {
+                console.log(err);
             });
-        }).catch(function(error){
-            console.log(error);
+        }).catch((err) => {
+            console.log(err);
         });
-    }).catch(function(error) {
-        console.log(error);
+    }).catch((err) => {
+        console.log(err);
     });
 }
 
-
-
 function dnsWatchdog(domain, mins, next) {
-    ping.sys.probe(domain, function(isAlive) {
+    ping.sys.probe(domain, (isAlive) => {
         if (isAlive) {
             console.log('[DNS_WATCHDOG]',domain,'is up.')
-            next();
+            return next();
         } else {
             console.log('[DNS_WATCHDOG]',domain,'is down',mins,'minutes')
             setTimeout(() => {
@@ -69,5 +66,6 @@ function dnsWatchdog(domain, mins, next) {
         }
     });
 }
+
 module.exports.dnsWatchdog = dnsWatchdog;
 module.exports.sshPayload = sshPayload;
