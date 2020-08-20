@@ -24,31 +24,27 @@ function sshPayload(data, next) {
         host: data.domain,
         username: server_user,
         privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
-    }).then(() => {
+    })
+    .then(() => {
         ssh.putDirectory(path.normalize('./rk-client'), 'rk-client', {
             recursive: true,
             concurrency: 10
-        })
-        .then(() => {
-            console.log("[SSH] Copied install files");
-            ssh.exec('sudo', ['chmod', '+x', loc])
-            .then(() => {
-                console.log("[SSH] chmod setup script");
-                ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass])
-                .then(() => {
-                    console.log("[SSH_PAYLOAD] Bash script ended OMFGGGGGGGGGGGGG!!!!!!!!!!!!");
-                    ssh.end();
-                    next();
-                }).catch((err) => {
-                    console.log(err);
-                });
-            }).catch((err) => {
-                console.log(err);
-            });
-        }).catch((err) => {
-            console.log(err);
         });
-    }).catch((err) => {
+    })
+    .then(() => {
+        console.log("[SSH] Copied install files");
+        ssh.exec('sudo', ['chmod', '+x', loc]);
+    })
+    .then(() => {
+        console.log("[SSH] chmod setup script");
+        ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
+    })
+    .then(() => {
+        console.log("[SSH_PAYLOAD] Bash script ended OMFGGGGGGGGGGGGG!!!!!!!!!!!!");
+        ssh.end();
+        return next();
+    })
+    .catch((err) => {
         console.log(err);
     });
 }
