@@ -8,5 +8,7 @@ mongoose.model('User', new mongoose.Schema({
     subscriptionId: String,
     subdomain: String,
     instance: String,
-    ip: String
+    ip: String,
+    resetPasswordToken: String,
+    resetPasswordExpires: Date
 }));
