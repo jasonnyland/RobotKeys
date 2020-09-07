@@ -1,24 +1,18 @@
 #!/bin/bash
-### required args:  url, username, password
-# if [ $# -ne 3 ]
-#  then
-#     echo $#
-#     echo "Invalid args.  Use ./setup.sh url username password"
-#     exit 1
-# fi
+
 url=$1
 username=$2
 password=$3
 
 ### install docker ###
-apt-get update
+apt-get update -y
 apt-get upgrade -y
-apt-get install apt-transport-https ca-certificates curl software-properties-common  -y
+apt-get install -y apt-transport-https ca-certificates curl software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - # 2> /dev/null
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-apt-get update
+apt-get update -y
 ### apt-cache policy docker-ce
-apt-get install docker-ce -y
+apt-get install -y docker-ce
 systemctl status docker
 
 ### setup directories ###
