@@ -1,5 +1,6 @@
 const createError = require('http-errors');
 const express = require('express');
+const router = express.Router();
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
@@ -18,13 +19,13 @@ const User = mongoose.model('User');
 const namecheap = require('./namecheap.js');
 const sshscript = require('./sshscript.js');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
+const forgot = require('./routes/forgot')
 
 //mongoose.connect('mongodb://'+process.env.MONGO_USERNAME+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_LOCATION,{useNewUrlParser: true, useUnifiedTopology: true})
 mongoose.connect(process.env.MONGO_LOCATION, {useNewUrlParser: true, useUnifiedTopology: true});
 
 const app = express();
+app.use(router);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -232,86 +233,88 @@ app.post('/login',
         res.redirect('/main');
     });
 
-app.get('/forgot', function(req, res) {
-    res.render('forgot', {
-        user: req.user
-    });
-});
+app.use('/forgot', forgot);
 
-app.post('/forgot', function(req, res, next) {
-    User.findOne({ email: req.body.email }, (err, user) => {
-        if (err) return next(err);
-        if (!user) {
-            res.status(500).send(`Email not recognized`);
-        } else {
-            console.log("email to change:", user.email);
-            user.resetPasswordToken = crypto.randomBytes(32).toString('hex');
-            user.resetPasswordExpires = Date.now() + (60*60*1000);
-            user.save();
-            const transport = nodemailer.createTransport({
-                service: process.env.SEND_MAIL_SERVICE,
-                auth: {
-                    user: process.env.SEND_MAIL_USER,
-                    pass: process.env.SEND_MAIL_PASS
-                }
-            });
-            const messageOptions = {
-                to: user.email,
-                from: process.env.SEND_MAIL_FROM,
-                subject: 'RobotKeys.com Password Reset',
-                text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
-                    'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-                    'http://' + req.headers.host + '/reset/' + user.resetPasswordToken + '\n\n' +
-                    'If you did not request this, please ignore this email and your password will remain unchanged.\n'
-            };
-            transport.sendMail(messageOptions, (err, data) => {
-                if (err) {
-                    res.redirect('/forgot');
-                    return next(err);
-                }
-                res.status(200).send('Please check your email for the reset link');
-                console.log('DEBUG: data returned from sendMail\n',data);
-            })
-        }
-    });
-});
+// app.get('/forgot', function(req, res) {
+//     res.render('forgot', {
+//         user: req.user
+//     });
+// });
 
-app.get('/reset/:token', (req, res) => {
-    console.log('looking up', req.params.token )
-    User.findOne({ 
-        resetPasswordToken: req.params.token, 
-        resetPasswordExpires: { $gt: Date.now() } 
-    }, (err, user) => {
-        if (err) next(err);
-        if (!user) {
-            res.status(500).send('Password reset token is invalid or has expired.');
-        } else {
-            res.render('reset', {
-                user: req.user
-            });
-        }
+// app.post('/forgot', function(req, res, next) {
+//     User.findOne({ email: req.body.email }, (err, user) => {
+//         if (err) return next(err);
+//         if (!user) {
+//             res.status(500).send(`Email not recognized`);
+//         } else {
+//             console.log("email to change:", user.email);
+//             user.resetPasswordToken = crypto.randomBytes(32).toString('hex');
+//             user.resetPasswordExpires = Date.now() + (60*60*1000);
+//             user.save();
+//             const transport = nodemailer.createTransport({
+//                 service: process.env.SEND_MAIL_SERVICE,
+//                 auth: {
+//                     user: process.env.SEND_MAIL_USER,
+//                     pass: process.env.SEND_MAIL_PASS
+//                 }
+//             });
+//             const messageOptions = {
+//                 to: user.email,
+//                 from: process.env.SEND_MAIL_FROM,
+//                 subject: 'RobotKeys.com Password Reset',
+//                 text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+//                     'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
+//                     'http://' + req.headers.host + '/reset/' + user.resetPasswordToken + '\n\n' +
+//                     'If you did not request this, please ignore this email and your password will remain unchanged.\n'
+//             };
+//             transport.sendMail(messageOptions, (err, data) => {
+//                 if (err) {
+//                     res.redirect('/forgot');
+//                     return next(err);
+//                 }
+//                 res.status(200).send('Please check your email for the reset link');
+//                 console.log('DEBUG: data returned from sendMail\n',data);
+//             })
+//         }
+//     });
+// });
+
+// app.get('/reset/:token', (req, res) => {
+//     console.log('looking up', req.params.token )
+//     User.findOne({ 
+//         resetPasswordToken: req.params.token, 
+//         resetPasswordExpires: { $gt: Date.now() } 
+//     }, (err, user) => {
+//         if (err) next(err);
+//         if (!user) {
+//             res.status(500).send('Password reset token is invalid or has expired.');
+//         } else {
+//             res.render('reset', {
+//                 user: req.user
+//             });
+//         }
         
-      });
-});
+//       });
+// });
 
-app.post('/reset/:token', (req, res) => {
-    User.findOne({ 
-        resetPasswordToken: req.params.token, 
-        resetPasswordExpires: { $gt: Date.now() } 
-    }, (err, user) => {
-        if (err) next(err);
-        if (!user) {
-            res.status(500).send('Password reset token is invalid or has expired.');
-        } else {
-            console.log('req.body.password', req.body.password);
-            user.passwordHash = bcrypt.hashSync(req.body.password, 10);
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
-            user.save();
-            res.redirect('/login');
-        }
-      });
-});
+// app.post('/reset/:token', (req, res) => {
+//     User.findOne({ 
+//         resetPasswordToken: req.params.token, 
+//         resetPasswordExpires: { $gt: Date.now() } 
+//     }, (err, user) => {
+//         if (err) next(err);
+//         if (!user) {
+//             res.status(500).send('Password reset token is invalid or has expired.');
+//         } else {
+//             console.log('req.body.password', req.body.password);
+//             user.passwordHash = bcrypt.hashSync(req.body.password, 10);
+//             user.resetPasswordToken = undefined;
+//             user.resetPasswordExpires = undefined;
+//             user.save();
+//             res.redirect('/login');
+//         }
+//       });
+// });
 
 app.get('/guide', (req, res) => {
     res.render('guide')
