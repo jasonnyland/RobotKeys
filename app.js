@@ -20,7 +20,7 @@ const namecheap = require('./namecheap.js');
 const sshscript = require('./sshscript.js');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const forgot = require('./routes/forgot')
-const webhook = require('./webhook.js')
+const webhook = require('./routes/webhook')
 
 //mongoose.connect('mongodb://'+process.env.MONGO_USERNAME+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_LOCATION,{useNewUrlParser: true, useUnifiedTopology: true})
 mongoose.connect(process.env.MONGO_LOCATION, {useNewUrlParser: true, useUnifiedTopology: true});
