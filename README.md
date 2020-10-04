@@ -1,5 +1,5 @@
 # RobotKeys
-RobotKeys is my first attempt at web development.  The goal was to create a PaaS that accepts payment and then creates a pre-configured WebDAV server with SSL for customers to host a KeePass (password manager) database file.
+RobotKeys is a PaaS that accepts payment and then creates a pre-configured WebDAV server with SSL for customers to host a KeePass file.  It is my first web development project.
 ## How It Works
 1.  User creates account or logs in
 2.  User chooses a subscription plan and pays through the Stripe portal
@@ -8,7 +8,7 @@ RobotKeys is my first attempt at web development.  The goal was to create a PaaS
 6.  An API call is made to Namecheap to create a DNS entry for the subdomain
 7.  A watchdog process pings the subdomain every minute until the DNS propogates
 8.  Once the URL is valid, the app connects to the server via SSH to copy and execute scripts
-9.  Two Docker containers are run; a LetsEncrypt-configured reverse proxy & a WebDAV server
+9.  Two Docker containers are run: a LetsEncrypt-configured reverse proxy & a WebDAV server
 
 ## Sources
 - I started with this SaaS tutorial on Youtube [Full-Stack Web Dev Crash Course](https://bit.ly/3junLhh) because this was my first experience with Javascript, Node.js, and web development.  This left me with working user validation and Stripe payment integration.
