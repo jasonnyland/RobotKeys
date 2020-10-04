@@ -5,7 +5,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('mongoose');
-require('./models.js');
+require('./models/models');
 const bcrypt = require('bcrypt');
 const expressSession = require('express-session');
 const passport = require('passport');
@@ -14,10 +14,10 @@ const dotenv = require('dotenv');
 dotenv.config();
 //const AWS = require('aws-sdk');
 //AWS.config.update({region: 'REGION'}); // Load credentials and set region from JSON file
-const ec2 = require('./ec2.js');
+const ec2 = require('./modules/ec2');
 const User = mongoose.model('User');
-const namecheap = require('./namecheap.js');
-const sshscript = require('./sshscript.js');
+const namecheap = require('./modules/namecheap');
+const sshscript = require('./modules/sshscript');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const forgot = require('./routes/forgot')
 const webhook = require('./routes/webhook')

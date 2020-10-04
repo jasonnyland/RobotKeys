@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-require('../models.js');
+require('../models/models');
 const User = mongoose.model('User');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv');
 dotenv.config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const ec2 = require('../ec2.js');
+const ec2 = require('../modules/ec2');
 
 // ----------------- Stripe Sample Code ------------------
 // Use body-parser to retrieve the raw body as a buffer
