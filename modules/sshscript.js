@@ -40,7 +40,7 @@ function sshPayload(data, next) {
         ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
     })
     .then(() => {
-        console.log("[SSH_PAYLOAD] Bash script ended OMFGGGGGGGGGGGGG!!!!!!!!!!!!");
+        console.log("[SSH_PAYLOAD] Bash script ended");
         ssh.end();
         return next();
     })
