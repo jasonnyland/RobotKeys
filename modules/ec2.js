@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 // Load credentials and set region from JSON file
-AWS.config.update({region: 'us-west-1'});
+// AWS.config.update({region: 'us-west-1'});
 AWS.config.getCredentials((err) => {
     if (err) console.log(err.stack);
     // credentials not loaded

@@ -12,8 +12,6 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const dotenv = require('dotenv');
 dotenv.config();
-//const AWS = require('aws-sdk');
-//AWS.config.update({region: 'REGION'}); // Load credentials and set region from JSON file
 const ec2 = require('./modules/ec2');
 const User = mongoose.model('User');
 const namecheap = require('./modules/namecheap');
