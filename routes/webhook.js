@@ -39,10 +39,13 @@ router.post('/', bodyParser.raw({type: 'application/json'}), (req, res) => {
                 user.customerId = session.customer;
                 user.save();
                 ec2.newEC2((err, data) => {
-                    console.log("[AWS API] New instance created:", data);
-                    user.instance = data;
-                    user.save();
-
+                    if (err) {
+                        console.log("[AWS API ERROR] The instance failed to be created");
+                    } else {
+                        console.log("[AWS API] New instance created:", data);
+                        user.instance = data;
+                        user.save();
+                    }
                 });
             }
         })

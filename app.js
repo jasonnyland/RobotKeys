@@ -21,7 +21,10 @@ const forgot = require('./routes/forgot')
 const webhook = require('./routes/webhook')
 
 //mongoose.connect('mongodb://'+process.env.MONGO_USERNAME+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_LOCATION,{useNewUrlParser: true, useUnifiedTopology: true})
-mongoose.connect(process.env.MONGO_LOCATION, {useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect(process.env.MONGO_LOCATION, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
 
 const app = express();
 app.use(router);
@@ -35,7 +38,9 @@ app.use('/webhook', webhook);
 
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({extended: false}));
+app.use(express.urlencoded({
+    extended: false
+}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressSession({
@@ -55,7 +60,9 @@ passport.use(new LocalStrategy({
     }, (err, user) => {
         if (err) return next(err);
         if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
-            return next({message: 'Email or password incorrect'});
+            return next({
+                message: 'Email or password incorrect'
+            });
         }
         return next(null, user);
     })
@@ -69,7 +76,9 @@ passport.use('signup-local', new LocalStrategy({
         email: email
     }, (err, user) => {
         if (err) return next(err);
-        if (user) return next({message: "User already exists"});
+        if (user) return next({
+            message: "User already exists"
+        });
         let newUser = new User({
             email: email,
             passwordHash: bcrypt.hashSync(password, 10)
@@ -92,7 +101,9 @@ passport.deserializeUser((id, next) => {
 });
 
 app.get('/', (req, res) => {
-    res.render('index', {title: "RobotKeys"});
+    res.render('index', {
+        title: "RobotKeys"
+    });
 });
 
 app.get('/billing', (req, res, next) => {
@@ -143,11 +154,17 @@ app.get('/main', (req, res) => {
 app.post('/main', (req, res, next) => {
     // if user has an instance, get the IP, update nameservers, and launch scripts when nameservers update
     if (req.user.instance) {
-        User.findOne({subdomain: req.body.subdomain}, (err, user) => {
+        User.findOne({
+            subdomain: req.body.subdomain
+        }, (err, user) => {
             if (err) return next(err);
-            if (user) return next({message: 'Subdomain is taken.'});
+            if (user) return next({
+                message: 'Subdomain is taken.'
+            });
             if (!user) {
-                User.findOne({_id: req.user._id}, (err, user) => {
+                User.findOne({
+                    _id: req.user._id
+                }, (err, user) => {
                     if (err) return next(err);
                     if (user) {
                         user.subdomain = req.body.subdomain;
@@ -171,7 +188,7 @@ app.post('/main', (req, res, next) => {
                             });
                         });
                         /////////////////////////////////////////////
-                        ec2.tagInstance(user.instance,'Name',user.subdomain, () => {
+                        ec2.tagInstance(user.instance, 'Name', user.subdomain, () => {
                             //console.log("Instance Tagged")
                         })
                         res.redirect('/main');
@@ -188,7 +205,9 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login',
-    passport.authenticate('local', {failureRedirect: '/login'}), (req, res) => {
+    passport.authenticate('local', {
+        failureRedirect: '/login'
+    }), (req, res) => {
         res.redirect('/main');
     });
 
@@ -199,7 +218,9 @@ app.get('/guide', (req, res) => {
 });
 
 app.post('/signup',
-    passport.authenticate('signup-local', {failureRedirect: '/'}),
+    passport.authenticate('signup-local', {
+        failureRedirect: '/'
+    }),
     (req, res) => {
         res.redirect('/billing');
     });
