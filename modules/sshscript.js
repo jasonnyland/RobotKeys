@@ -26,7 +26,7 @@ function sshPayload(data, next) {
         privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
     })
     .then(() => {
-        ssh.putDirectory(path.normalize('./rk-client'), 'rk-client', {
+        ssh.putDirectory(path.normalize('./modules/rk-client'), 'rk-client', {
             recursive: true,
             concurrency: 10
         });
