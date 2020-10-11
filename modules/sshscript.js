@@ -3,7 +3,6 @@ const NodeSSH = require('node-ssh')
 const ping = require('ping')
 const ssh = new NodeSSH()
 const loc = '/home/ubuntu/rk-client/setup.sh'
-const server_user = 'ubuntu'
 
 // // Sample structure for call
 // var data = {
@@ -20,9 +19,10 @@ const server_user = 'ubuntu'
 // });
 
 function sshPayload(data, next) {
+    console.log("SSH connecting to",data.domain);
     ssh.connect({
         host: data.domain,
-        username: server_user,
+        username: 'ubuntu',
         privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
     })
     .then(() => {
