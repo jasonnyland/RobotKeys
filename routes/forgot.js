@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const mongoose = require('mongoose');
-require('../models/models');
-const User = mongoose.model('User');
+const User = require('../models/Users');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');

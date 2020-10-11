@@ -1,10 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
-require('../models/models');
-const User = mongoose.model('User');
-const crypto = require('crypto');
-const bcrypt = require('bcrypt');
+const User = require('../models/Users');
 const dotenv = require('dotenv');
 dotenv.config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);

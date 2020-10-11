@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 
-mongoose.model('User', new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     email: String,
     passwordHash: String,
     subscriptionActive: {type: Boolean, default: false},
@@ -11,4 +11,6 @@ mongoose.model('User', new mongoose.Schema({
     ip: String,
     resetPasswordToken: String,
     resetPasswordExpires: Date
-}));
+});
+
+module.exports = User = mongoose.model('users', UserSchema);
