@@ -1,6 +1,7 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
 export COMPOSE_HTTP_TIMEOUT=200
+export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 url=$1
 username=$2
 password=$3
