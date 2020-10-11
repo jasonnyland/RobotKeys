@@ -23,7 +23,7 @@ function sshPayload(data, next) {
     ssh.connect({
         host: data.domain,
         username: server_user,
-        privateKey: process.env.SSH_CLIENT_KEY
+        privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
     })
     .then(() => {
         ssh.putDirectory(path.normalize('./rk-client'), 'rk-client', {
