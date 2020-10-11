@@ -38,7 +38,7 @@ async function sshPayload(data, next) {
         await ssh.exec('sudo', ['shutdown', '--reboot', 'now']);
         const reconnectLoop = async function (count, next) {
             try {
-                console.log(`[SSH] Reconnecting: ${count} seconds`);
+                console.log(`[SSH] Reconnecting: ${count} minutes`);
                 await ssh.connect({
                     host: data.domain,
                     username: 'ubuntu',
@@ -47,13 +47,13 @@ async function sshPayload(data, next) {
                 next();
             } catch {
                 setTimeout(() => {
-                    reconnectLoop((count + 5),next);
-                },5000);
+                    reconnectLoop((count + 1),next);
+                },60*1000);
             }
         }
         reconnectLoop(0, async () => {
             console.log("[SSH] Running docker-compose");
-            await ssh.exec('cd', ['rk-client']);
+            await ssh.exec('cd', ['/home/ubuntu/rk-client']);
             await ssh.exec('docker-compose', ['up', '-d']);
         })
     } catch (err) {

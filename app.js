@@ -5,11 +5,8 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('mongoose');
-require('./models/models');
-const bcrypt = require('bcrypt');
 const expressSession = require('express-session');
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
+const passport = require('./passport/setup');
 const dotenv = require('dotenv');
 dotenv.config();
 const ec2 = require('./modules/ec2');
@@ -51,54 +48,11 @@ app.use(expressSession({
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.use(new LocalStrategy({
-    usernameField: 'email',
-    passwordField: 'password',
-}, (email, password, next) => {
-    User.findOne({
-        email: email
-    }, (err, user) => {
-        if (err) return next(err);
-        if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
-            return next({
-                message: 'Email or password incorrect'
-            });
-        }
-        return next(null, user);
-    })
-}));
 
-passport.use('signup-local', new LocalStrategy({
-    usernameField: 'email',
-    passwordField: 'password'
-}, (email, password, next) => {
-    User.findOne({
-        email: email
-    }, (err, user) => {
-        if (err) return next(err);
-        if (user) return next({
-            message: "User already exists"
-        });
-        let newUser = new User({
-            email: email,
-            passwordHash: bcrypt.hashSync(password, 10)
-        });
-        newUser.save((err) => {
-            return next(err, newUser);
-        });
 
-    });
-}));
 
-passport.serializeUser((user, next) => {
-    return next(null, user._id);
-});
 
-passport.deserializeUser((id, next) => {
-    User.findById(id, (err, user) => {
-        return next(err, user);
-    })
-});
+
 
 app.get('/', (req, res) => {
     res.render('index', {
