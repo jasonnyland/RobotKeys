@@ -5,12 +5,14 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require('mongoose');
+require('./models/models');
+const User = mongoose.model('User');
 const expressSession = require('express-session');
 const passport = require('./passport/setup');
 const dotenv = require('dotenv');
 dotenv.config();
 const ec2 = require('./modules/ec2');
-const User = mongoose.model('User');
+
 const namecheap = require('./modules/namecheap');
 const sshscript = require('./modules/sshscript');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -47,11 +49,6 @@ app.use(expressSession({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
-
-
-
-
-
 
 
 app.get('/', (req, res) => {
