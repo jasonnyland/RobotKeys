@@ -53,8 +53,7 @@ async function sshPayload(data, next) {
         }
         reconnectLoop(0, async () => {
             console.log("[SSH] Running docker-compose");
-            await ssh.exec('cd', ['/home/ubuntu/rk-client']);
-            await ssh.exec('docker-compose', ['up', '-d']);
+            await ssh.exec('docker-compose', ['-f','/home/ubuntu/rk-client/docker-compose.yml','up', '-d']);
         })
     } catch (err) {
         console.log(err);
