@@ -18,35 +18,27 @@ const loc = '/home/ubuntu/rk-client/setup.sh'
 //     });
 // });
 
-function sshPayload(data, next) {
-    console.log("SSH connecting to",data.domain);
-    ssh.connect({
-        host: data.domain,
-        username: 'ubuntu',
-        privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
-    })
-    .then(() => {
-        ssh.putDirectory(path.normalize('./modules/rk-client'), 'rk-client', {
-            recursive: true,
-            concurrency: 10
+async function sshPayload(data, next) {  
+    try {
+        console.log("SSH connecting to",data.domain);
+        await ssh.connect({
+            host: data.domain,
+            username: 'ubuntu',
+            privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
         });
-    })
-    .then(() => {
+        await ssh.putDirectory(path.normalize('./modules/rk-client'), 'rk-client', {
+                recursive: true,
+                concurrency: 10
+            });
         console.log("[SSH] Copied install files");
-        ssh.exec('sudo', ['chmod', '+x', loc]);
-    })
-    .then(() => {
+        await ssh.exec('sudo', ['chmod', '+x', loc]);
         console.log("[SSH] chmod setup script");
-        ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
-    })
-    .then(() => {
-        console.log("[SSH_PAYLOAD] Bash script ended");
-        ssh.end();
+        await ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
+        console.log("[SSH_PAYLOAD] Bash script end");
         return next();
-    })
-    .catch((err) => {
+    } catch (err) {
         console.log(err);
-    });
+    }
 }
 
 function dnsWatchdog(domain, mins, next) {
