@@ -36,18 +36,26 @@ async function sshPayload(data, next) {
         await ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
         console.log("[SSH] Rebooting");
         await ssh.exec('sudo', ['shutdown', '--reboot', 'now']);
-        setTimeout(async () => {
-            console.log("[SSH] Reconnecting");
-            await ssh.connect({
-                host: data.domain,
-                username: 'ubuntu',
-                privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
-            });
+        const reconnectLoop = async function (count, next) {
+            try {
+                console.log(`[SSH] Reconnecting: ${count} seconds`);
+                await ssh.connect({
+                    host: data.domain,
+                    username: 'ubuntu',
+                    privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
+                });
+                next();
+            } catch {
+                setTimeout(() => {
+                    reconnectLoop((count + 5),next);
+                },5000);
+            }
+        }
+        reconnectLoop(0, async () => {
             console.log("[SSH] Running docker-compose");
             await ssh.exec('cd', ['rk-client']);
             await ssh.exec('docker-compose', ['up', '-d']);
-        }, 5000)
-        return next();
+        })
     } catch (err) {
         console.log(err);
     }
