@@ -20,21 +20,33 @@ const loc = '/home/ubuntu/rk-client/setup.sh'
 
 async function sshPayload(data, next) {  
     try {
-        console.log("SSH connecting to",data.domain);
+        console.log("[SSH] Connecting to",data.domain);
         await ssh.connect({
             host: data.domain,
             username: 'ubuntu',
             privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
         });
+        console.log("[SSH] Copying install files");
         await ssh.putDirectory(path.normalize('./modules/rk-client'), 'rk-client', {
                 recursive: true,
                 concurrency: 10
             });
-        console.log("[SSH] Copied install files");
         await ssh.exec('sudo', ['chmod', '+x', loc]);
-        console.log("[SSH] chmod setup script");
+        console.log("[SSH] Running the setup script");
         await ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
-        console.log("[SSH_PAYLOAD] Bash script end");
+        console.log("[SSH] Rebooting");
+        await ssh.exec('sudo', ['shutdown', '--reboot', 'now']);
+        setTimeout(() => {
+            console.log("[SSH] Reconnecting");
+            await ssh.connect({
+                host: data.domain,
+                username: 'ubuntu',
+                privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
+            });
+            console.log("[SSH] Running docker-compose");
+            await ssh.exec('cd', ['rk-client']);
+            await ssh.exec('docker-compose', ['up', '-d']);
+        }, 5000)
         return next();
     } catch (err) {
         console.log(err);

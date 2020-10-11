@@ -4,6 +4,10 @@ export COMPOSE_HTTP_TIMEOUT=200
 url=$1
 username=$2
 password=$3
+url=URL
+srv=server_name
+name=WEBDAV_USERNAME
+pass=WEBDAV_PASSWORD
 
 ### install docker ###
 apt-get update -y
@@ -29,25 +33,23 @@ ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 ### update parameters in docker/nginx configs ###
 cd /home/ubuntu/rk-client
-url=URL
-srv=server_name
-name=WEBDAV_USERNAME
-pass=WEBDAV_PASSWORD
-# set domain in docker-compose.yml and default
-sed -i "s/\($url *= *\).*/\1$1/" ./docker-compose.yml
+
+# cusomize configuration file for nginx reverse proxy
 sed -i "s/\($srv *\).*/\1$1/" ./default
-# set username/password from input parameters
+mv -f ./default /home/ubuntu/docker/letsencrypt/config/nginx/site-confs/
+# customize configuration file for docker-compose
+sed -i "s/\($url *= *\).*/\1$1/" ./docker-compose.yml
 sed -i "s/\($name *= *\).*/\1$2/" ./docker-compose.yml
 sed -i "s/\($pass *= *\).*/\1$3/" ./docker-compose.yml
 # launch docker containers
-docker-compose up -d
+#docker-compose up -d
 # remove plaintext user data from dockerfile
-sed -i "s/\($name *= *\).*/\1$/" ./docker-compose.yml
-sed -i "s/\($pass *= *\).*/\1$/" ./docker-compose.yml
+# sed -i "s/\($name *= *\).*/\1$/" ./docker-compose.yml
+# sed -i "s/\($pass *= *\).*/\1$/" ./docker-compose.yml
 
 ### configure nginx reverse proxy ###
-mv -f ./default /home/ubuntu/docker/letsencrypt/config/nginx/site-confs/
-systemctl restart docker
-docker container restart letsencrypt
 
-shutdown --reboot now
+#systemctl restart docker
+#docker container restart letsencrypt
+
+##shutdown --reboot now
