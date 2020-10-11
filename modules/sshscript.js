@@ -36,7 +36,7 @@ async function sshPayload(data, next) {
         await ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
         console.log("[SSH] Rebooting");
         await ssh.exec('sudo', ['shutdown', '--reboot', 'now']);
-        setTimeout(() => {
+        setTimeout(async () => {
             console.log("[SSH] Reconnecting");
             await ssh.connect({
                 host: data.domain,
