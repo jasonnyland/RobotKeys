@@ -1,28 +1,23 @@
+// libraries
 const createError = require('http-errors');
 const express = require('express');
 const router = express.Router();
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const mongoose = require('mongoose');
 const User = require('./models/Users');
 const expressSession = require('express-session');
 const passport = require('./passport/setup');
-const dotenv = require('dotenv');
-dotenv.config();
-const ec2 = require('./modules/ec2');
 
+// my modules
+const ec2 = require('./modules/ec2');
 const namecheap = require('./modules/namecheap');
 const sshscript = require('./modules/sshscript');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// routes
 const forgot = require('./routes/forgot')
 const webhook = require('./routes/webhook')
 
-//mongoose.connect('mongodb://'+process.env.MONGO_USERNAME+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_LOCATION,{useNewUrlParser: true, useUnifiedTopology: true})
-mongoose.connect(process.env.MONGO_LOCATION, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
 
 const app = express();
 app.use(router);
@@ -31,9 +26,11 @@ app.use(router);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+// routes
+app.use('/forgot', forgot);
 app.use('/webhook', webhook);
 
-
+// middleware
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({
@@ -161,7 +158,6 @@ app.post('/login',
         res.redirect('/main');
     });
 
-app.use('/forgot', forgot);
 
 app.get('/guide', (req, res) => {
     res.render('guide')

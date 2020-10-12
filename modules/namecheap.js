@@ -1,8 +1,14 @@
-const parser = require('xml2json');
+const xmlParser = require('xml2json');
 const axios = require('axios');
 const dotenv = require('dotenv');
 dotenv.config();
 
+/*
+Notes:
+ - Namecheap API returns XML
+ - Namecheap API does not have functionality to add a single DNS entry
+    - To add an entry, we need to get a list of existing entries and reconstruct it while adding the new entry
+*/
 
 //  GetHosts constructs an API call for host data and returns an array of JSON objects
 function getHosts (next) {
@@ -17,7 +23,7 @@ function getHosts (next) {
     }
     axios.post('https://api.namecheap.com/xml.response', null, { params: params })
         .then((res) => {
-            let parsed = parser.toJson(res.data);
+            let parsed = xmlParser.toJson(res.data);
             parsed = JSON.parse(parsed);
             if (parsed.ApiResponse.Status === 'ERROR') {
                 console.log('[Namecheap API] getHosts Error:', parsed.ApiResponse.Errors.Error.$t);
@@ -82,15 +88,15 @@ function addHost (hostname, address, next) {
 
             axios.post('https://api.namecheap.com/xml.response', null, { params: parameters })
                 .then((res) => {
-                    let parsed = parser.toJson(res.data);
+                    let parsed = xmlParser.toJson(res.data);
                     parsed = JSON.parse(parsed);
                     if (parsed.ApiResponse.Status === 'ERROR') {
                         console.log('[Namecheap API] addHost Error:', parsed.ApiResponse.Errors.Error.$t);
 
                     } else {
                         console.log('[Namecheap API] addHost:', parsed.ApiResponse.Status);
-                        let parsed = parser.toJson(res.data);
-                        parsed = JSON.parse(parsed);
+                        // let parsed = xmlParser.toJson(res.data);
+                        // parsed = JSON.parse(parsed);
                         return next(null, parsed);
                     }
                 })
