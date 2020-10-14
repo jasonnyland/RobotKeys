@@ -18,65 +18,75 @@ const loc = '/home/ubuntu/rk-client/setup.sh'
 //     });
 // });
 
-async function sshPayload(data, next) {  
-    try {
-        console.log("[SSH] Connecting to",data.domain);
-        await ssh.connect({
-            host: data.domain,
-            username: 'ubuntu',
-            privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
-        });
-        console.log("[SSH] Copying install files");
-        await ssh.putDirectory(path.normalize('./modules/rk-client'), 'rk-client', {
-                recursive: true,
-                concurrency: 10
+const sshPayload = async (domain, dav_user, dav_pass) => {  
+    return new Promise( async (resolve, reject) => {
+        try {
+            console.log("[SSH] Connecting to",domain);
+            await ssh.connect({
+                host: domain,
+                username: 'ubuntu',
+                privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
             });
-        await ssh.exec('sudo', ['chmod', '+x', loc]);
-        console.log("[SSH] Running the setup script");
-        await ssh.exec('sudo', ['bash', loc, data.domain, data.dav_user, data.dav_pass]);
-        console.log("[SSH] Rebooting");
-        await ssh.exec('sudo', ['shutdown', '--reboot', 'now']);
-        const reconnectLoop = async function (count, next) {
-            try {
-                console.log(`[SSH] Reconnecting: ${count} minutes`);
-                await ssh.connect({
-                    host: data.domain,
-                    username: 'ubuntu',
-                    privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
+            console.log("[SSH] Copying install files");
+            await ssh.putDirectory(path.normalize('./modules/rk-client'), 'rk-client', {
+                    recursive: true,
+                    concurrency: 10
                 });
-                next();
-            } catch {
-                setTimeout(() => {
-                    reconnectLoop((count + 1),next);
-                },60*1000);
+            await ssh.exec('sudo', ['chmod', '+x', loc]);
+            console.log("[SSH] Running the setup script");
+            await ssh.exec('sudo', ['bash', loc, domain, dav_user, dav_pass]);
+            console.log("[SSH] Rebooting");
+            await ssh.exec('sudo', ['shutdown', '--reboot', 'now']);
+            const reconnectLoop = async function (count, next) {
+                try {
+                    console.log(`[SSH] Reconnecting: ${count} minutes`);
+                    await ssh.connect({
+                        host: domain,
+                        username: 'ubuntu',
+                        privateKey: path.normalize(process.env.SSH_CLIENT_KEY)
+                    });
+                    next();
+                } catch {
+                    setTimeout(() => {
+                        reconnectLoop((count + 1),next);
+                    },60*1000);
+                }
             }
+            reconnectLoop(0, async () => {
+                try {
+                    console.log("[SSH] Running docker-compose");
+                    await ssh.exec('sudo', ['docker-compose','-f','/home/ubuntu/rk-client/docker-compose.yml','up', '-d', '>', '/dev/null']);
+                } catch (err) {
+                    console.log(err);
+                }
+                
+            })
+            resolve();
+        } catch (err) {
+            reject(err);
         }
-        reconnectLoop(0, async () => {
-            try {
-                console.log("[SSH] Running docker-compose");
-                await ssh.exec('sudo', ['docker-compose','-f','/home/ubuntu/rk-client/docker-compose.yml','up', '-d', '>', '/dev/null']);
-            } catch (err) {
-                console.log(err);
-            }
-            
-        })
-    } catch (err) {
-        console.log(err);
-    }
+    })
 }
 
-function dnsWatchdog(domain, mins, next) {
-    ping.sys.probe(domain, (isAlive) => {
-        if (isAlive) {
-            console.log('[DNS_WATCHDOG]',domain,'is up.')
-            return next();
-        } else {
-            console.log('[DNS_WATCHDOG]',domain,'is down',mins,'minutes')
-            setTimeout(() => {
-                dnsWatchdog(domain, (mins + 1), next);
-            }, 60000);
+const dnsWatchdog = (domain, mins) => {
+    return new Promise((resolve, reject) => {
+        try {
+            ping.sys.probe(domain, (isAlive) => {
+                if (isAlive) {
+                    console.log('[DNS_WATCHDOG]',domain,'is up.')
+                    resolve();
+                } else {
+                    console.log('[DNS_WATCHDOG]',domain,'is down',mins,'minutes')
+                    setTimeout(resolve(() => {
+                        dnsWatchdog(domain, (mins + 1));
+                    }), (60 * 1000));
+                }
+            });  
+        } catch (err) {
+            reject(err);
         }
-    });
+    })
+    
 }
 
 module.exports.dnsWatchdog = dnsWatchdog;

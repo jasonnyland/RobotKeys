@@ -1,4 +1,6 @@
 const AWS = require('aws-sdk');
+const { resolve } = require('path');
+const { promise } = require('ping');
 // Load credentials and set region from JSON file
 // AWS.config.update({region: 'us-west-1'});
 AWS.config.getCredentials((err) => {
@@ -46,41 +48,44 @@ function newEC2(callback) {
         });
 }
 
-function getIP(instance_id, callback) {
-    const requestParams = {
-        InstanceIds: [instance_id]
-    };
-
-    const instancePromise = new AWS.EC2({apiVersion: '2016-11-15'}).describeInstances(requestParams).promise();
-    instancePromise.then((data) => {
-            const ipAddress = data.Reservations[0].Instances[0].PublicIpAddress;
-            if (ipAddress) {
-                return callback(null, ipAddress);
-            } else {
-                setTimeout(() => {
-                    getIP(instance_id, callback);
-                }, 1000);
+const getIP = (instance_id) => {
+    return new Promise( async (resolve, reject) => {
+        try {
+            const requestParams = {
+                InstanceIds: [instance_id]
+            };    
+            const instancePromise = new AWS.EC2({apiVersion: '2016-11-15'}).describeInstances(requestParams).promise();
+            let ipAddress;
+            const ret = await instancePromise();
+            ipAddress = ret.Reservations[0].Instances[0].PublicIpAddress;
+            while (!ipAddress) {
+                setTimeout(async () => {
+                        const ret = await instancePromise();
+                        ipAddress = ret.Reservations[0].Instances[0].PublicIpAddress;
+                    }, 1000);
             }
-        }).catch((err) => {
-            console.error(err, err.stack);
-            return callback(err);
-        });
+            resolve(ipAddress);
+        } catch (err) {
+            reject(err);
+        }
+    })
 }
+    
 
-function tagInstance(instanceId, key, value, callback) {
-    tagParams = {Resources: [instanceId], Tags: [
+const tagInstance = (instanceId, key, value) => {
+    return new Promise((resolve, reject) => {
+        tagParams = {Resources: [instanceId], Tags: [
             {
                 Key: key,
                 Value: value
             }
         ]};
-    const tagPromise = new AWS.EC2({apiVersion: '2016-11-15'}).createTags(tagParams).promise();
-    tagPromise.then(() => {
-            return callback(null,0)
-        }).catch((err) => {
-            console.error(err, err.stack);
-            return callback(err);
-        });
+        const tagPromise = new AWS.EC2({apiVersion: '2016-11-15'}).createTags(tagParams).promise();
+        tagPromise
+        .then(() => { resolve(); })
+        .catch((err) => { reject(err); });
+    })
+
 }
 
 module.exports.newEC2 = newEC2;

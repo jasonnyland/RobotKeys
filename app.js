@@ -8,12 +8,14 @@ const logger = require('morgan');
 const User = require('./models/Users');
 const expressSession = require('express-session');
 const passport = require('./passport/setup');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // my modules
 const ec2 = require('./modules/ec2');
 const namecheap = require('./modules/namecheap');
 const sshscript = require('./modules/sshscript');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const applogic = require('./modules/applogic');
+
 // routes
 const forgot = require('./routes/forgot')
 const webhook = require('./routes/webhook')
@@ -54,6 +56,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/billing', (req, res, next) => {
+    // Skip billing page if already subscribed (temporary until other billing features added, like unsubscribe)
     if (req.user.subscriptionActive) {
         res.redirect('/main');
     } else {
@@ -98,51 +101,19 @@ app.get('/main', (req, res) => {
 
 });
 
-app.post('/main', (req, res, next) => {
-    // if user has an instance, get the IP, update nameservers, and launch scripts when nameservers update
-    if (req.user.instance) {
-        User.findOne({
-            subdomain: req.body.subdomain
-        }, (err, user) => {
-            if (err) return next(err);
-            if (user) return next({
-                message: 'Subdomain is taken.'
-            });
-            if (!user) {
-                User.findOne({
-                    _id: req.user._id
-                }, (err, user) => {
-                    if (err) return next(err);
-                    if (user) {
-                        user.subdomain = req.body.subdomain;
-                        user.save();
-                        /////////////////////////////////////////////
-                        ec2.getIP(req.user.instance, (err, data) => {
-                            user.ip = data;
-                            user.save();
-                            namecheap.addHost(user.subdomain, user.ip, (err, data) => {
-                                let entry = {
-                                    domain: [user.subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.'),
-                                    dav_user: req.body.name,
-                                    dav_pass: req.body.pw
-                                }
-                                sshscript.dnsWatchdog(entry.domain, 0, () => {
-                                    console.log("Watchdog ended, triggering sshPayload")
-                                    sshscript.sshPayload(entry, () => {
-                                        console.log("sshPayload has ended and triggered its callback")
-                                    });
-                                });
-                            });
-                        });
-                        /////////////////////////////////////////////
-                        ec2.tagInstance(user.instance, 'Name', user.subdomain, () => {
-                            //console.log("Instance Tagged")
-                        })
-                        res.redirect('/main');
-                    }
-                });
-            }
-        });
+app.post('/main', async (req, res, next) => {
+    try {
+        //const userEntry = await User.findOne({ _id: req_user._id });
+        res.status(200);
+        const instance = await applogic.requestSubdomain(req.user, req.body.subdomain);
+        await ec2.tagInstance(instance, 'Name', req.body.subdomain);
+        const ip = await applogic.resolveUserInstanceIp(req.user);
+        await namecheap.addHost(req.body.subdomain, ip);
+        const domain = [subdomain, process.env.APP_URL_SLD, process.env.APP_URL_TLD].join('.');
+        await sshscript.dnsWatchdog(domain, 0);
+        await sshscript.sshPayload(domain, req.body.name, req.body.pw);
+    } catch (err) {
+        console.log(err);
     }
 
 });

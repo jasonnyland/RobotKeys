@@ -11,23 +11,24 @@ Notes:
 */
 
 //  GetHosts constructs an API call for host data and returns an array of JSON objects
-function getHosts (next) {
-    const params = {
-        ApiUser: process.env.NAMECHEAP_API_USER,
-        ApiKey: process.env.NAMECHEAP_API_KEY,
-        UserName: process.env.NAMECHEAP_API_USER,
-        ClientIp: process.env.APP_IP,
-        Command: 'namecheap.domains.dns.getHosts',
-        SLD: process.env.APP_URL_SLD,
-        TLD: process.env.APP_URL_TLD
-    }
-    axios.post('https://api.namecheap.com/xml.response', null, { params: params })
-        .then((res) => {
-            let parsed = xmlParser.toJson(res.data);
+const getHosts = () => {
+    return new Promise(async (resolve, reject) => {
+        const params = {
+            ApiUser: process.env.NAMECHEAP_API_USER,
+            ApiKey: process.env.NAMECHEAP_API_KEY,
+            UserName: process.env.NAMECHEAP_API_USER,
+            ClientIp: process.env.APP_IP,
+            Command: 'namecheap.domains.dns.getHosts',
+            SLD: process.env.APP_URL_SLD,
+            TLD: process.env.APP_URL_TLD
+        }
+        try {
+            const response = await axios.post('https://api.namecheap.com/xml.response', null, { params: params });
+            let parsed = xmlParser.toJson(response.data);
             parsed = JSON.parse(parsed);
             if (parsed.ApiResponse.Status === 'ERROR') {
                 console.log('[Namecheap API] getHosts Error:', parsed.ApiResponse.Errors.Error.$t);
-
+                reject(parsed.ApiResponse.Errors.Error.$t);
             } else {
                 console.log('[Namecheap API] getHosts:', parsed.ApiResponse.Status);
                 const list = parsed.ApiResponse.CommandResponse.DomainDNSGetHostsResult.host;
@@ -41,32 +42,26 @@ function getHosts (next) {
                     loop_out.TTL = list[i].TTL;
                     output.push(loop_out);
                 }
-                return next(null, output);
+                resolve(output);
             }
-        })
-        .catch((err) => {
-            console.log(err);
-            return next(err);
-        })
-        .then(() => {
-            // always executed
-        });
+        } catch (err) {
+            reject(err);
+        }
+    })    
 }
 
 // addHost takes data from getHosts, adds a new host, builds a request, and sends it
-function addHost (hostname, address, next) {
-    getHosts((err, data) => {
-        if (err) return next(err);
-        else {
-            const addon = {
+const addHost = (hostname, address) => {
+    return new Promise( async (resolve,reject) => {
+        try {
+            let data = await getHosts();
+            data.push({
                 HostName: hostname,
                 RecordType: 'A',
                 Address: address,
                 MXPref: '10',
                 TTL: '60'
-            };
-
-            data.push(addon);
+            });
 
             let parameters = {
                 ApiUser: process.env.NAMECHEAP_API_USER,
@@ -77,7 +72,6 @@ function addHost (hostname, address, next) {
                 SLD: process.env.APP_URL_SLD,
                 TLD: process.env.APP_URL_TLD
             };
-
             for (let i = 0; i < data.length; i++) {
                 parameters[['HostName',i].join('')] = data[i].HostName;
                 parameters[['RecordType',i].join('')] = data[i].RecordType;
@@ -85,25 +79,21 @@ function addHost (hostname, address, next) {
                 parameters[['MXPref',i].join('')] = data[i].MXPref;
                 parameters[['TTL',i].join('')] = data[i].TTL;
             }
+            const postResponse = await axios.post('https://api.namecheap.com/xml.response', null, { params: parameters });
+            let parsed = xmlParser.toJson(postResponse.data);
+            parsed = JSON.parse(parsed);
+            if (parsed.ApiResponse.Status === 'ERROR') {
+                console.log('[Namecheap API] addHost Error:', parsed.ApiResponse.Errors.Error.$t);
+                reject(parsed.ApiResponse.Errors.Error.$t)
+            } else {
+                console.log('[Namecheap API] addHost:', parsed.ApiResponse.Status);
+                resolve(parsed.ApiResponse.Status);
+            }
 
-            axios.post('https://api.namecheap.com/xml.response', null, { params: parameters })
-                .then((res) => {
-                    let parsed = xmlParser.toJson(res.data);
-                    parsed = JSON.parse(parsed);
-                    if (parsed.ApiResponse.Status === 'ERROR') {
-                        console.log('[Namecheap API] addHost Error:', parsed.ApiResponse.Errors.Error.$t);
-
-                    } else {
-                        console.log('[Namecheap API] addHost:', parsed.ApiResponse.Status);
-                        // let parsed = xmlParser.toJson(res.data);
-                        // parsed = JSON.parse(parsed);
-                        return next(null, parsed);
-                    }
-                })
-                .catch((err) => {
-                    return next(err);
-                });
-        }});
+        } catch (err) {
+            reject(err);
+        } 
+    })
 }
 module.exports.getHosts = getHosts;
 module.exports.addHost = addHost;
