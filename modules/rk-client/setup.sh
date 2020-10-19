@@ -36,7 +36,7 @@ ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 cd /home/ubuntu/rk-client
 
 # cusomize configuration file for nginx reverse proxy
-sed -i "s/\($srv *\).*/\1$1/" ./default
+sed -i "s/\($srv *\).*/\1$1;/" ./default
 mv -f ./default /home/ubuntu/docker/letsencrypt/config/nginx/site-confs/
 # customize configuration file for docker-compose
 sed -i "s/\($url *= *\).*/\1$1/" ./docker-compose.yml
