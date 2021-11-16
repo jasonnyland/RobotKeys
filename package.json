@@ -7,7 +7,7 @@
     "dev": "nodemon index"
   },
   "dependencies": {
-    "aws-sdk": "^2.721.0",
+    "aws-sdk": "^2.814.0",
     "axios": "^0.19.2",
     "bcrypt": "*",
     "body-parser": "^1.19.0",
